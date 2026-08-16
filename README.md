@@ -1,3 +1,34 @@
+# Êxodo Quest (Exodus Quest)
+
+> Duolingo-style game to study Exodus chapters 1–20: chapter quizzes, TTS narration, AI-simplified interpretation, a hidden admin panel and two-way integration with the **Zapia Max** WhatsApp agent.
+
+**Live demo:** https://exodo-quest.vercel.app
+
+## ✨ Features
+
+- 🗺️ **Linear trail Cap 1→20** — zig-zag map, one chapter at a time
+- 📖 **Story / Summary / Quiz** flow per chapter with TTS narration
+- 🤖 **AI simplified interpretation** of each chapter
+- 🕵️ **Hidden admin dashboard** with student metrics
+- 💬 **Zapia Max integration** — WhatsApp tutor messages flow both ways (webhooks + cron safety net)
+- 🗄️ **Supabase (PostgreSQL)** with row-level security — schema in `supabase/schema.sql`
+
+## 🚀 Stack
+
+Next.js 14 (App Router) · TypeScript · Tailwind CSS · Supabase (PostgreSQL)
+
+## 📦 Run locally
+
+```bash
+npm install
+# configure Supabase env vars (see .env.local.example)
+npm run dev
+```
+
+---
+
+# 🇧🇷 Português (original)
+
 # 🔥 Êxodo Quest
 
 App gamificado (estilo Duolingo) para estudar os **capítulos 1–20 de Êxodo**, com quiz por capítulo, narração TTS, interpretação simplificada por IA, painel de admin oculto e integração bidirecional com o agente de WhatsApp **Zapia Max**.
