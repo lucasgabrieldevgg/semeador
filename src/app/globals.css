@@ -1,0 +1,56 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: light;
+}
+.dark {
+  color-scheme: dark;
+}
+
+body {
+  @apply bg-[#f7f7f7] text-duo-ink dark:bg-[#131f24] dark:text-[#f1f7fb] transition-colors duration-300;
+  font-family: "Nunito", "Segoe UI", system-ui, -apple-system, sans-serif;
+}
+
+/* Botão estilo Duolingo: arredondado com sombra "3D" embaixo */
+.btn-duo {
+  @apply font-extrabold uppercase tracking-wide rounded-2xl px-6 py-3 transition-all duration-150
+         border-b-4 active:border-b-0 active:translate-y-1 select-none text-center;
+}
+.btn-green {
+  @apply btn-duo bg-duo-green border-duo-greenDark text-white hover:brightness-105;
+}
+.btn-blue {
+  @apply btn-duo bg-duo-blue border-duo-blueDark text-white hover:brightness-105;
+}
+.btn-red {
+  @apply btn-duo bg-duo-red border-duo-redDark text-white hover:brightness-105;
+}
+.btn-ghost {
+  @apply btn-duo bg-white border-gray-300 text-duo-ink hover:bg-gray-50
+         dark:bg-[#202f36] dark:border-[#37464f] dark:text-white dark:hover:bg-[#2a3b44];
+}
+
+/* Cartões */
+.card {
+  @apply bg-white dark:bg-[#202f36] rounded-3xl border-2 border-gray-200 dark:border-[#37464f] p-5;
+}
+
+/* Opção do quiz */
+.quiz-option {
+  @apply w-full text-left rounded-2xl border-2 border-b-4 px-5 py-4 font-bold transition-all duration-150
+         bg-white border-gray-300 text-duo-ink
+         dark:bg-[#202f36] dark:border-[#37464f] dark:text-white
+         hover:bg-blue-50 dark:hover:bg-[#2a3b44] cursor-pointer;
+}
+.quiz-option-selected {
+  @apply border-duo-blue bg-blue-50 text-duo-blueDark dark:bg-[#173f54] dark:text-duo-blue;
+}
+.quiz-option-correct {
+  @apply border-duo-green bg-green-50 text-duo-greenDark dark:bg-[#1c3a18] dark:text-duo-green;
+}
+.quiz-option-wrong {
+  @apply border-duo-red bg-red-50 text-duo-redDark dark:bg-[#451b1b] dark:text-duo-red;
+}
