@@ -1,194 +1,142 @@
-# Êxodo Quest (Exodus Quest)
+# 🔥 Exodus Quest (êxodo Quest)
 
-> Duolingo-style game to study Exodus chapters 1–20: chapter quizzes, TTS narration, AI-simplified interpretation, a hidden admin panel and two-way integration with the **Zapia Max** WhatsApp agent.
+> Duolingo-style gamified app to study **Exodus chapters 1–20**: per-chapter quizzes, TTS narration, AI-simplified interpretation, a hidden admin panel and two-way integration with the **Zapia Max** WhatsApp agent.
 
 **Live demo:** https://exodo-quest.vercel.app
 
-## ✨ Features
-
-- 🗺️ **Linear trail Cap 1→20** — zig-zag map, one chapter at a time
-- 📖 **Story / Summary / Quiz** flow per chapter with TTS narration
-- 🤖 **AI simplified interpretation** of each chapter
-- 🕵️ **Hidden admin dashboard** with student metrics
-- 💬 **Zapia Max integration** — WhatsApp tutor messages flow both ways (webhooks + cron safety net)
-- 🗄️ **Supabase (PostgreSQL)** with row-level security — schema in `supabase/schema.sql`
-
-## 🚀 Stack
-
-Next.js 14 (App Router) · TypeScript · Tailwind CSS · Supabase (PostgreSQL)
-
-## 📦 Run locally
-
-```bash
-npm install
-# configure Supabase env vars (see .env.local.example)
-npm run dev
-```
-
----
-
-# 🇧🇷 Português (original)
-
-# 🔥 Êxodo Quest
-
-App gamificado (estilo Duolingo) para estudar os **capítulos 1–20 de Êxodo**, com quiz por capítulo, narração TTS, interpretação simplificada por IA, painel de admin oculto e integração bidirecional com o agente de WhatsApp **Zapia Max**.
-
 **Stack:** Next.js 14 (App Router) · TypeScript · Tailwind CSS · Supabase (PostgreSQL)
 
+[Leia em Portugues](README.pt-BR.md)
+
 ---
 
-## 📂 Estrutura de pastas
+## 📂 Folder structure
 
 ```
 exodo-quest/
 ├── supabase/
-│   └── schema.sql                  # Schema completo (tabelas + RLS + queries)
+│   └── schema.sql                  # Full schema (tables + RLS + queries)
 ├── src/
 │   ├── app/
-│   │   ├── page.tsx                # Onboarding (nome) + 🔑 backdoor de admin
-│   │   ├── trilha/page.tsx         # Trilha linear Cap 1→20 (mapa zigue-zague)
-│   │   ├── capitulo/[id]/page.tsx  # História / Resumo / Quiz
-│   │   ├── admin-dashboard/page.tsx# Painel oculto do Adalberto
+│   │   ├── page.tsx                # Onboarding (name) + 🔑 admin backdoor
+│   │   ├── trilha/page.tsx         # Linear trail Cap 1→20 (zig-zag map)
+│   │   ├── capitulo/[id]/page.tsx  # Story / Summary / Quiz
+│   │   ├── admin-dashboard/page.tsx# Hidden admin panel
 │   │   ├── layout.tsx / globals.css
 │   │   └── api/
-│   │       ├── usuarios/route.ts             # POST onboarding (detecta backdoor)
-│   │       ├── quiz/responder/route.ts       # POST grava resposta + renova sessão
-│   │       ├── sessao/flush/route.ts         # POST encerra sessão → webhook Zapia
-│   │       ├── cron/verifica-sessoes/route.ts# GET cron (rede de segurança 10 min)
-│   │       ├── consulta-status/route.ts      # GET  Zapia → Site (histórico aluno)
-│   │       ├── envia-mensagem-zapia/route.ts # POST Zapia → Site (mensagem tutor)
-│   │       ├── mensagens/route.ts            # GET/PATCH mensagens no app
-│   │       ├── admin/metricas/route.ts       # GET métricas do painel
-│   │       ├── admin/mensagem/route.ts       # POST mensagem pelo painel
-│   │       └── ia/interpretacao/route.ts     # POST gera interpretação via IA
+│   │       ├── usuarios/route.ts             # POST onboarding (detects backdoor)
+│   │       ├── quiz/responder/route.ts       # POST saves answer + renews session
+│   │       ├── sessao/flush/route.ts         # POST ends session → Zapia webhook
+│   │       ├── cron/verifica-sessoes/route.ts# GET cron (10-min safety net)
+│   │       ├── consulta-status/route.ts      # GET  Zapia → Site (student history)
+│   │       ├── envia-mensagem-zapia/route.ts # POST Zapia → Site (tutor message)
+│   │       ├── mensagens/route.ts            # GET/PATCH messages in the app
+│   │       ├── admin/metricas/route.ts       # GET panel metrics
+│   │       ├── admin/mensagem/route.ts       # POST message from the panel
+│   │       └── ia/interpretacao/route.ts     # POST generates AI interpretation
 │   ├── components/   # ThemeToggle, HelpButton, ProgressBar, TTSButton, MensagensBanner
 │   ├── lib/
-│   │   ├── supabaseAdmin.ts        # Cliente service-role (só servidor)
-│   │   ├── zapia.ts                # Consolidação de sessão + webhook + auth API key
-│   │   ├── ia.ts                   # Cliente ChatAnywhere (protocolo OpenAI)
-│   │   └── useSessao.ts            # Hook client: timer 10 min + sendBeacon
+│   │   ├── supabaseAdmin.ts        # Service-role client (server only)
+│   │   ├── zapia.ts                # Session consolidation + webhook + API key auth
+│   │   ├── ia.ts                   # ChatAnywhere client (OpenAI protocol)
+│   │   └── useSessao.ts            # Client hook: 10-min timer + sendBeacon
 │   └── data/
-│       └── capitulos.ts            # ⬅️ COLE AQUI o conteúdo do seu PDF
-├── vercel.json                     # Cron a cada 5 min
-└── .env.local.example              # Modelo de variáveis de ambiente
+│       └── capitulos.ts            # ⬇️ PASTE YOUR PDF CONTENT HERE
+├── vercel.json                     # Cron every 5 min
+└── .env.local.example              # Environment variable template
 ```
 
 ---
 
-## 🚀 Setup em 4 passos
+## 🚀 Setup in 4 steps
 
 ### 1. Supabase
-1. Crie um projeto em [supabase.com](https://supabase.com).
-2. Abra **SQL Editor** e execute todo o conteúdo de `supabase/schema.sql`.
-3. Em **Project Settings → API**, copie a `URL` e a `service_role key`.
+1. Create a project at [supabase.com](https://supabase.com).
+2. Open the **SQL Editor** and run the entire contents of `supabase/schema.sql`.
+3. In **Project Settings → API**, copy the `URL` and the `service_role key`.
 
-### 2. Variáveis de ambiente
+### 2. Environment variables
 ```bash
 cp .env.local.example .env.local
 ```
-Preencha:
+Fill in:
 
-| Variável | Para quê |
+| Variable | What it's for |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL do projeto Supabase |
-| `SUPABASE_SERVICE_ROLE_KEY` | Acesso ao banco (somente servidor — RLS bloqueia o resto) |
-| `ZAPIA_WEBHOOK_URL` | URL onde a Zapia Max recebe o relatório de sessão |
-| `ZAPIA_API_KEY` | Chave secreta que a Zapia envia no header `x-api-key` |
-| `OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL` | IA da Interpretação Simplificada (ChatAnywhere, protocolo OpenAI) |
-| `CRON_SECRET` | (opcional, Vercel) protege a rota do cron |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase project URL |
+| `SUPABASE_SERVICE_ROLE_KEY` | Database access (server only — RLS blocks the rest) |
+| `ZAPIA_WEBHOOK_URL` | URL where Zapia Max receives the session report |
+| `ZAPIA_API_KEY` | Secret key Zapia sends in the `x-api-key` header |
+| `OPENAI_API_KEY` / `OPENAI_BASE_URL` / `OPENAI_MODEL` | AI for the Simplified Interpretation (ChatAnywhere, OpenAI protocol) |
+| `CRON_SECRET` | (optional, Vercel) protects the cron route |
 
-> ⚠️ **Segurança:** nunca faça commit do `.env.local`. Se a sua chave da ChatAnywhere já apareceu em algum lugar público, revogue e gere outra.
+> ⚠️ **Security:** never commit `.env.local`. If your ChatAnywhere key has ever appeared anywhere public, revoke it and generate a new one.
 
-### 3. Rodar
+### 3. Run
 ```bash
 npm install
 npm run dev      # http://localhost:3000
 ```
 
-### 4. Conteúdo do PDF
-Abra `src/data/capitulos.ts` e cole, para cada capítulo:
-- `textoOriginal` (ARC), `resumo`, e o array `quiz`:
+### 4. PDF content
+Open `src/data/capitulos.ts` and paste, for each chapter:
+- `textoOriginal` (ARC), `resumo`, and the `quiz` array:
 
 ```ts
 { id: "cap3-q1", pergunta: "...", opcoes: ["A","B","C","D"], correta: 1, explicacao: "..." }
 ```
 
-O Capítulo 1 já vem preenchido como exemplo. Se `interpretacao` ficar `""`, o app gera automaticamente via IA (com cache).
+Chapter 1 ships filled in as an example. If `interpretacao` is left `""`, the app generates it automatically via AI (with caching).
 
 ---
 
-## 🚪 Backdoor de Admin
+## 🚪 Admin backdoor
 
-Na tela inicial, digite **`adalberto`** ou **`batalha2026`** → redireciona para `/admin-dashboard` (métricas gerais + envio de mensagens diretas/broadcast gravadas em `mensagens_admin`).
+On the home screen, type **`adalberto`** or **`batalha2026`** → redirects to `/admin-dashboard` (overall metrics + direct/broadcast messages stored in `mensagens_admin`).
 
 ---
 
-## 🔁 Integração Zapia Max
+## 🔁 Zapia Max integration
 
-### A) Site ➡️ Zapia — Relatório de sessão (timeout 10 min)
+### A) Site ➡️ Zapia — Session report (10-min timeout)
 
-Mecanismo em **3 camadas**:
+A **3-layer** mechanism:
 
-1. **Timer no client** (`src/lib/useSessao.ts`): cada resposta de quiz renova um timer de 10 min; ao estourar, chama `POST /api/sessao/flush`.
-2. **Fechamento do app**: evento `pagehide` dispara `navigator.sendBeacon` com motivo `"fechamento"` (envio imediato e garantido).
-3. **Cron de segurança** (`/api/cron/verifica-sessoes`, a cada 5 min via `vercel.json`): pega sessões órfãs com 10+ min de inatividade (celular desligou, etc.). Idempotente — cada sessão envia o relatório **uma única vez** (`relatorio_enviado`).
+1. **Client timer** (`src/lib/useSessao.ts`): every quiz answer renews a 10-minute timer; when it expires it calls `POST /api/sessao/flush`.
+2. **App close**: the `pagehide` event fires `navigator.sendBeacon` with reason `"fechamento"` (immediate, guaranteed delivery).
+3. **Safety-net cron** (`/api/cron/verifica-sessoes`, every 5 min via `vercel.json`): picks up orphan sessions with 10+ minutes of inactivity (phone died, etc.). Idempotent — each session sends the report **exactly once** (`relatorio_enviado`).
 
-Payload POST enviado para `ZAPIA_WEBHOOK_URL`:
+POST payload sent to `ZAPIA_WEBHOOK_URL`:
 ```json
 {
   "usuario": "Lucas",
-  "resumo_sessao": "Errou 2 e acertou 1 perguntas no Cap 3, acertou todas as 3 perguntas no Cap 4",
-  "detalhes": [ { "capitulo": 3, "pergunta_id": "cap3-q1", "resultado": false }, ... ]
+  "resumo_sessao": "Missed 2 and got 1 right in Cap 3, got all 3 right in Cap 4",
+  "detalhes": [ { "capitulo": 3, "pergunta_id": "cap3-q1", "resultado": false } ]
 }
 ```
 
-### B) Zapia ➡️ Site — Custom Actions (protegidas por `x-api-key`)
+### B) Zapia ➡️ Site — Custom Actions (protected by `x-api-key`)
 
-**1. Consultar status de um aluno**
+**1. Check a student's status**
 ```
 GET /api/consulta-status?nome=Lucas&capitulo=3
 Header: x-api-key: <ZAPIA_API_KEY>
 ```
-Resposta inclui `resumo_humanizado` pronto para a IA responder ao Adalberto:
+The response includes a `resumo_humanizado` ready for the AI to answer the admin:
 ```json
 {
   "usuario": "Lucas", "capitulo": 3,
   "total_respostas": 5, "acertos": 3, "erros": 2, "taxa_acerto": "60%",
-  "resumo_humanizado": "Lucas respondeu 5 pergunta(s) no Cap 3: 3 acerto(s) e 2 erro(s) (60% de acerto).",
+  "resumo_humanizado": "Lucas answered 5 question(s) in Cap 3: 3 right and 2 wrong (60%).",
   "historico": [...]
 }
 ```
-Omitindo `capitulo`, retorna o desempenho geral + `desempenho_por_capitulo`.
+Omitting `capitulo` returns overall performance + `desempenho_por_capitulo`.
 
-**2. Enviar mensagem para o app do aluno**
+**2. Send a message to the student's app**
 ```
 POST /api/envia-mensagem-zapia
 Header: x-api-key: <ZAPIA_API_KEY>
-Body: { "nome": "Lucas", "mensagem": "Revise o Cap 3 antes de continuar! 💪" }
+Body: { "nome": "Lucas", "mensagem": "Review Cap 3 before continuing! 💪" }
 ```
-`"nome": "todos"` (ou omitido) = broadcast. A mensagem aparece como **banner amarelo do Tutor** no app (polling a cada 60s).
-
-**Teste rápido com curl:**
-```bash
-curl -H "x-api-key: SUA_CHAVE" "https://seu-app.vercel.app/api/consulta-status?nome=Lucas&capitulo=3"
-
-curl -X POST -H "x-api-key: SUA_CHAVE" -H "Content-Type: application/json" \
-  -d '{"nome":"Lucas","mensagem":"Parabéns pelo Cap 4!"}' \
-  https://seu-app.vercel.app/api/envia-mensagem-zapia
-```
-
----
-
-## 🎨 UI/UX
-
-- **Estilo Duolingo**: botões 3D arredondados (`border-b-4` + efeito de "afundar"), feedback verde/vermelho imediato, barras de progresso animadas, trilha em zigue-zague com cadeados/estrelas.
-- **Dark Mode**: classe `dark` no `<html>`, persistido em `localStorage`, sem flash no carregamento.
-- **Modo Ajuda**: botão flutuante azul `?` em todas as telas, com texto contextual.
-- **TTS**: Web Speech API nativa (pt-BR, gratuita) nos modos História e Resumo.
-
-## 🔐 Segurança
-
-- Tabelas com **RLS habilitado e sem policies** → a anon key não acessa nada; todo acesso passa pelas rotas de API com a service-role key (servidor).
-- Endpoints da Zapia exigem `x-api-key` (ou `Authorization: Bearer`).
-- Cron protegido por `CRON_SECRET`.
-- Todas as chaves em variáveis de ambiente.
+`"nome": "todos"` (or omitted) = broadcast. The message appears as a **yellow Tutor banner** in the app (polling every 60s).
