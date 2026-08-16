@@ -1,4 +1,4 @@
-# 🔥 Exodus Quest (êxodo Quest)
+# 🔥 Exodus Quest (Êxodo Quest)
 
 > Duolingo-style gamified app to study **Exodus chapters 1–20**: per-chapter quizzes, TTS narration, AI-simplified interpretation, a hidden admin panel and two-way integration with the **Zapia Max** WhatsApp agent.
 
