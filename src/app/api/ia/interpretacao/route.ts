@@ -13,7 +13,22 @@ const cache = new Map<number, string>();
  * Gera a "Interpretação Simplificada" de um capítulo via IA (ChatAnywhere).
  * Body: { capitulo: number }
  */
+/* 🚦 Limite diário de IA (generoso) — mantém o site grátis no ar */
+const LIMITE_DIA = 40;
+const _HITS = new Map();
+function limiteEstourado(req: Request): boolean {
+  const hoje = new Date().toISOString().slice(0, 10);
+  for (const k of [..._HITS.keys()]) if (!k.startsWith(hoje)) _HITS.delete(k);
+  const ip = String(req.headers.get("x-forwarded-for") || "").split(",")[0].trim() || "anon";
+  const k = hoje + ":" + ip;
+  const n = _HITS.get(k) || 0;
+  if (n >= LIMITE_DIA) return true;
+  _HITS.set(k, n + 1);
+  return false;
+}
+
 export async function POST(req: Request) {
+  if (limiteEstourado(req)) return NextResponse.json({ erro: "Limite diário de IA atingido (40 interpretações/dia por pessoa) — volta amanhã! 💙" }, { status: 429 });
   try {
     const { capitulo } = await req.json();
     const num = Number(capitulo);
