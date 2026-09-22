@@ -1,8 +1,0 @@
-{
-  "crons": [
-    {
-      "path": "/api/cron/verifica-sessoes",
-      "schedule": "0 3 * * *"
-    }
-  ]
-}
