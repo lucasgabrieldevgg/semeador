@@ -1,6 +1,11 @@
 # 🌱 Semeador
 
+[![testes](https://github.com/lucasgabrieldevgg/semeador/actions/workflows/ci.yml/badge.svg)](https://github.com/lucasgabrieldevgg/semeador/actions/workflows/ci.yml)
+
 **Leia a Bíblia todo dia.** Várias traduções em domínio público, meta de leitura personalizada, ofensiva, XP opcional com loja de temas, e funciona offline. Instala no celular (PWA — sem baixar APK: o site vira o app na sua tela inicial).
+
+## 🌐 Teste agora
+**https://semeador.vercel.app** — grátis, sem conta. Teus dados de leitura ficam no teu aparelho (offline-first).
 
 ## Destaques
 - 📖 **Leitor**: livro → capítulo → versículo, toque no versículo pra marcar como lido, URLs bonitas (`/john/3/16`)
@@ -20,3 +25,17 @@ npm test                     # lógica do núcleo (meta, ofensiva, XP anti-farm,
 ```
 
 Feito por [lucasgabrieldevgg](https://github.com/lucasgabrieldevgg) 💜
+
+## Desenvolvimento
+```bash
+npm ci
+npm test       # suíte core (23 checks)
+npm run build  # atualiza o corpus de domínio público (cacheado, sem re-baixar) e compila
+```
+O CI roda testes + build de produção a cada push (badge lá em cima).
+
+## Stack
+Next.js 14 + React 18 · PWA (instalável, offline via service worker) · corpus de traduções em domínio público no build (Almeida, KJV, RVR1909 inclusas; mais 28 idiomas sob demanda) · publicado na Vercel.
+
+## Licença
+MIT — vê o arquivo [LICENSE](LICENSE).

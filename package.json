@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "node scripts/baixar-textos.js && next build",
     "start": "next start",
-    "test": "node tests/semeador_test.js"
+    "test": "node tests/semeador_test.js",
+    "predev": "node scripts/baixar-textos.js"
   },
   "dependencies": {
     "next": "14.2.5",

@@ -1,6 +1,11 @@
 # 🌱 Semeador
 
+[![testes](https://github.com/lucasgabrieldevgg/semeador/actions/workflows/ci.yml/badge.svg)](https://github.com/lucasgabrieldevgg/semeador/actions/workflows/ci.yml)
+
 **Read the Bible every day.** Multiple public-domain translations, personalized reading goal, streak, optional XP with a theme shop, and works offline. Install it on your phone (PWA — no APK download needed, the site itself becomes the app).
+
+## 🌐 Try it
+**https://semeador.vercel.app** — free, no account. Your reading data stays on your device (offline-first).
 
 ## Highlights
 - 📖 **Reader**: book → chapter → verse, tap a verse to mark it as read, pretty URLs (`/john/3/16`)
@@ -20,3 +25,17 @@ npm test                     # core logic (meta, streak, XP anti-farm, shop)
 ```
 
 Made by [lucasgabrieldevgg](https://github.com/lucasgabrieldevgg) 💜
+
+## Develop
+```bash
+npm ci
+npm test       # core suite (23 checks)
+npm run build  # refreshes the public-domain corpus (cached, no re-download) and builds
+```
+CI runs tests + production build on every push (badge above).
+
+## Stack
+Next.js 14 + React 18 · PWA (installable, offline via service worker) · build-time corpus of public-domain translations (Almeida, KJV, RVR1909 bundled; 28 more languages on demand) · deployed on Vercel.
+
+## License
+MIT — see [LICENSE](LICENSE).

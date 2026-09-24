@@ -51,6 +51,23 @@ async function temCap(tr,ab,nn){
   return !!(await c.match(chave));
 }
 
+const PROXY='https://soulchat-proxy.vercel.app/api/proxy';
+const MODELOS=['google/gemma-4-26b-a4b-it:free','nvidia/nemotron-3-super-120b-a12b:free','google/gemma-4-31b-it:free'];
+async function callAI(msgs){
+  const erros=[];
+  for(const m of MODELOS){
+    try{
+      const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:'openrouter',model:m,messages:msgs}),signal:AbortSignal.timeout(90000)});
+      if(!r.ok){erros.push(m.split(':')[0].split('/')[1]+' '+r.status);continue}
+      const d=await r.json();
+      const txt=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
+      if(txt&&/rate.?limit|quota|budget|credits|insufficient/i.test(txt)&&txt.length<400){erros.push(m.split(':')[0].split('/')[1]+' limite');continue}
+      if(txt)return txt;
+      erros.push('vazia');
+    }catch(e){erros.push('falhou')}
+  }
+  throw new Error('IA ocupada agora ('+erros.join(' · ')+') — tenta daqui a pouco');
+}
 const CAPAS=[
   {id:'grafite',nome:'Grafite',custo:0,acc:'#4b5563',ico:'alvor'},
   {id:'oliva',nome:'Oliva',custo:150,acc:'#65a30d',ico:'oliva'},
@@ -75,6 +92,7 @@ export default function App(){
   const [toast,setToast]=useState('');
   const [busca,setBusca]=useState({q:'',res:null,buscando:false,baixando:0});
   const [nomesLivros,setNomesLivros]=useState({});
+  const [coment,setComent]=useState({chave:'',txt:'',carregando:false,erro:''});
   const tr=TRADS.find(t=>t.id===trId)||TRADS[0];
   const capa=CAPAS.find(c=>c.id===xpState.ativo)||CAPAS[0];
   const hoje=CORE.hojeISO();
@@ -130,8 +148,10 @@ export default function App(){
   function marca(tipo,chave){
     const r=CORE.marca(log[hoje],tipo,chave);
     guardaLog({...log,[hoje]:r.dia});
-    if(xpState.modo&&r.ganhou)fala('+'+r.xp+' XP ⚡'+(CORE.xpDoDia(r.dia)>=CORE.TETO_DIA?' (teto do dia)':''));
-    else if(!xpState.modo&&tipo==='meta')fala('meta do dia cumprida! 🌱');
+    if(xpState.modo&&r.ganhou){
+      guardaXp({...xpState,total:xpState.total+r.xp}); // ⬅ o bug do XP zero: a carteira nunca era creditada
+      fala('+'+r.xp+' XP ⚡ total: '+(xpState.total+r.xp)+(CORE.xpDoDia(r.dia)>=CORE.TETO_DIA?' (teto do dia)':''));
+    }else if(!xpState.modo&&tipo==='meta')fala('meta do dia cumprida! 🌱');
     return r;
   }
   function desmarca(tipo,chave){
@@ -180,8 +200,32 @@ export default function App(){
     fala('capa desbloqueada! 🎨 (ícone do atalho atualiza ao reinstalar o app)');
   }
 
+  async function explicar(){
+    const chave=trId+'|'+ref.ab+'|'+ref.cap;
+    const cacheK='com_'+trId+'_'+ref.ab+'_'+ref.cap;
+    const salvo=ST.getJ(cacheK,null);
+    if(salvo){setComent({chave,txt:salvo,carregando:false,erro:''});return}
+    if(textoCap.length<40)return fala('o capítulo ainda não carregou');
+    const uso=ST.getJ('uso',{dia:'',n:0});
+    const hojeI=CORE.hojeISO();
+    if(uso.dia===hojeI&&uso.n>=40)return fala('limite de explicações de hoje atingido (40) — amanhã tem mais 💛');
+    ST.setJ('uso',{dia:hojeI,n:uso.dia===hojeI?uso.n+1:1});
+    setComent({chave,txt:'',carregando:true,erro:''});
+    try{
+      const recorte=textoCap.slice(0,6000);
+      const txt=await callAI([
+        {role:'system',content:'Você explica trechos da Bíblia de forma CLARA, em português do Brasil. ESTILO: linguagem de gente, frases curtas, direto ao ponto (como explicar pra um amigo no portão da igreja). ESTRUTURA: 1-2 frases de contexto (quem escreve, pra quem, quando aproximado), o que o trecho quer dizer no fundo, e 1 aplicação prática. NUNCA invente versículo nem cite referência que não está no trecho. Sem sermão, sem dogma de igreja específica, sem teologia polêmica. Texto simbólico? Diz que é simbólico e dá a leitura mais comum. Não sabe? Admite. MÁXIMO 180 palavras.'},
+        {role:'user',content:'LIVRO: '+nomeAtual+' '+ref.cap+' (tradução: '+tr.nome+')\n\nTEXTO:\n'+recorte+'\n\nExplique de forma clara.'}
+      ]);
+      const limpo=txt.trim();
+      ST.setJ(cacheK,limpo);
+      setComent({chave,txt:limpo,carregando:false,erro:''});
+    }catch(e){setComent({chave,txt:'',carregando:false,erro:e.message})}
+  }
+
   const pct=CORE.metaPct(dia,meta);
   const capAtivo=texto&&texto.chapters[ref.cap-1];
+  const textoCap=capAtivo?capAtivo.verses.map(v=>v.verse+' '+v.text).join('\n'):'';
   const l=LIVROS.find(x=>x.ab===ref.ab)||LIVROS[0];
   const idxL=LIVROS.findIndex(x=>x.ab===ref.ab);
   const nomeAtual=nomesLivros[l.ab]||l.nome;
@@ -191,8 +235,7 @@ export default function App(){
   const AT=LIVROS.slice(0,39),NT=LIVROS.slice(39);
 
   return <div className={'app '+mod} style={{'--acc':capa.acc,'--letra':letra+'px'}}>
-    <style>{CSS}</style>
-    <header className="topo">
+        <header className="topo">
       <span className="marca">🌱 Semeador</span>
       <nav>
         <button className={'aba'+(vista==='ler'?' on':'')} onClick={()=>setVista('ler')}>Ler</button>
@@ -254,6 +297,12 @@ export default function App(){
             <button onClick={()=>{const tem=texto&&texto.chapters.length>ref.cap;if(tem)vaiPara(ref.ab,ref.cap+1,true);else if(LIVROS[idxL+1])vaiPara(LIVROS[idxL+1].ab,1,true)}}>→</button>
           </div>
         </div>
+        {(coment.txt||coment.carregando||coment.erro)&&<div className="comentario">
+          {coment.carregando&&<p className="mudo">✨ explicando…</p>}
+          {coment.erro&&<p className="erro">✨ {coment.erro}</p>}
+          {coment.txt&&<><h4>✨ Explicação clara</h4><p style={{whiteSpace:'pre-wrap'}}>{coment.txt}</p><p className="mudo">IA pode errar — leia sempre com a Bíblia aberta. Este capítulo agora explica offline (ficou salvo).</p></>}
+        </div>}
+        {!coment.carregando&&<div className="linhaExp"><button className="explicar" onClick={explicar}>{coment.txt?'✨ explicar de novo':'✨ Explicar este capítulo (IA)'}</button><span className="mudo">contexto + sentido, em linguagem de gente</span></div>}
       </article>}
     </main>}
 
@@ -378,107 +427,3 @@ export default function App(){
   </div>;
 }
 
-const CSS=`
-.app{min-height:100vh;font-family:ui-sans-serif,system-ui,-apple-system,'Segoe UI',Roboto,sans-serif}
-.app.claro{--fundo:#fafaf9;--carta:#ffffff;--tx:#1c1917;--mut:#78716c;--borda:#e7e5e4;--suave:#f5f5f4}
-.app.escuro{--fundo:#0b0b0c;--carta:#161618;--tx:#ededed;--mut:#9b9b9b;--borda:#262628;--suave:#1d1d1f}
-.app{background:var(--fundo);color:var(--tx)}
-*{box-sizing:border-box}
-button{font:inherit;cursor:pointer;border:0;color:inherit;background:none}
-/* topo */
-.topo{position:sticky;top:0;z-index:9;display:flex;gap:10px;align-items:center;padding:10px 14px;background:var(--carta);border-bottom:1px solid var(--borda)}
-.marca{font-weight:800;font-size:14.5px;letter-spacing:-.01em;white-space:nowrap}
-.topo nav{display:flex;gap:2px;flex-wrap:wrap}
-.aba{padding:7px 11px;border-radius:8px;font-weight:600;font-size:13.5px;color:var(--mut)}
-.aba.on{background:var(--suave);color:var(--tx)}
-.aba b{font-weight:800;font-size:12px}
-.xp{margin-left:auto;font-weight:800;font-size:13px;color:var(--acc)}
-main{max-width:680px;margin:0 auto;padding:18px 16px 70px}
-.w h2{margin:0 0 2px;font-size:21px;letter-spacing:-.02em}
-.sub{color:var(--mut);font-size:13.5px;margin:0 0 16px}
-/* leitura */
-.cabecalhoLivro{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:10px}
-.escolha{background:var(--carta);border:1px solid var(--borda);border-radius:10px;padding:9px 13px;font-weight:700;font-size:14px}
-.escolha.tr{font-weight:500;color:var(--mut)}
-.painel{background:var(--carta);border:1px solid var(--borda);border-radius:14px;padding:14px;margin-bottom:14px}
-.linhaPainel{display:flex;justify-content:space-between;align-items:center;margin:4px 0 8px}
-.linhaPainel b{font-size:13px;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
-.fechar{font-size:12.5px;color:var(--mut);padding:4px 8px;border-radius:8px}
-.fechar:hover{background:var(--suave)}
-.livros{display:grid;grid-template-columns:repeat(auto-fill,minmax(96px,1fr));gap:6px;margin-bottom:14px}
-.lv{background:var(--suave);border:1px solid var(--borda);border-radius:9px;padding:9px 6px;font-weight:600;font-size:12.8px;text-align:center}
-.lv:hover{border-color:var(--acc)}
-.lv.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-.lingua{font-weight:700;font-size:13px;margin:12px 0 6px}
-.lingua span{color:var(--mut);font-weight:500}
-.trads{display:grid;grid-template-columns:repeat(auto-fill,minmax(230px,1fr));gap:6px}
-.td{display:flex;flex-direction:column;align-items:flex-start;gap:2px;background:var(--suave);border:1px solid var(--borda);border-radius:10px;padding:10px 12px;text-align:left}
-.td:hover{border-color:var(--acc)}
-.td.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
-.tdn{font-weight:700;font-size:13.5px}
-.tdn i{font-style:normal;color:var(--mut);font-weight:500}
-.tdf{font-size:11.5px;color:var(--mut)}
-.capitulos{display:flex;flex-wrap:wrap;gap:5px;margin:0 0 16px}
-.cap{min-width:36px;height:34px;border-radius:8px;background:var(--suave);font-weight:700;font-size:12.5px;border:1px solid var(--borda)}
-.cap.on{background:var(--acc);color:#fff;border-color:var(--acc)}
-.pagina{background:var(--carta);border:1px solid var(--borda);border-radius:4px;padding:26px clamp(18px,5vw,40px);font-size:var(--letra);line-height:1.85}
-.cab{font-weight:700;font-style:italic;margin:0 0 8px;color:var(--mut)}
-.versos{margin:0}
-.verso{cursor:pointer;border-radius:4px}
-.verso:hover{background:var(--suave)}
-.verso.lido{color:var(--mut)}
-.verso sup{font-weight:700;color:var(--acc);margin-right:1px;font-size:.72em}
-.verso.foco{background:var(--suave);box-shadow:0 0 0 3px var(--suave)}
-.dica{color:var(--mut);font-size:11.5px;margin:14px 0 0}
-.rodapeCap{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:18px;padding-top:14px;border-top:1px solid var(--borda);flex-wrap:wrap}
-.principal{background:var(--tx);color:var(--fundo);font-weight:700;border-radius:10px;padding:11px 16px;font-size:13.5px}
-.principal:disabled{opacity:.4;cursor:not-allowed}
-.navCap{display:flex;gap:6px}
-.navCap button{background:var(--suave);border:1px solid var(--borda);border-radius:10px;width:40px;height:38px;font-weight:800}
-/* cartões */
-.cartao{background:var(--carta);border:1px solid var(--borda);border-radius:12px;padding:16px;margin-bottom:12px}
-.cartao h3{margin:0 0 10px;font-size:14.5px}
-.barra{height:8px;background:var(--suave);border-radius:99px;overflow:hidden;margin:6px 0}
-.barra i{display:block;height:100%;background:var(--acc);border-radius:99px;transition:width .4s}
-.destaque{color:var(--acc);font-weight:700;font-size:13.5px;margin:8px 0 0}
-.mudo{color:var(--mut);font-size:12.5px}
-.erro{color:#dc2626;font-size:13.5px}
-.cent{text-align:center;margin-top:20px}
-.grade{display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-bottom:12px}
-.cartao.m{text-align:center;padding:12px 6px}
-.cartao.m b{display:block;font-size:19px}
-.cartao.m span{color:var(--mut);font-size:11px}
-/* controles */
-.linha{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:6px 0}
-.linha input[type=text],.linha input:not([type]),.linha input[type=time]{flex:1;min-width:160px;background:var(--suave);border:1px solid var(--borda);color:var(--tx);border-radius:10px;padding:10px 12px;outline:none;font:inherit}
-.linha input:focus{border-color:var(--acc)}
-.nat{background:var(--suave);border:1px solid var(--borda);color:var(--tx);border-radius:10px;padding:10px 12px;font:inherit;outline:none}
-.nat option{background:var(--carta);color:var(--tx)}
-.app.claro .nat option{background:#fff;color:#111}
-.app.escuro .nat option{background:#161618;color:#ededed}
-.mini{background:var(--suave);border:1px solid var(--borda);border-radius:9px;padding:8px 12px;font-weight:700;font-size:12.5px}
-.mini:disabled{opacity:.4;cursor:not-allowed}
-.perigo{color:#dc2626;border-color:rgba(220,38,38,.35)}
-.escolhe{background:var(--suave);border:1.5px solid var(--borda);border-radius:10px;padding:10px 16px;font-weight:700;font-size:13.5px}
-.escolhe.on{border-color:var(--acc);color:var(--acc)}
-input[type=range]{width:160px;accent-color:var(--acc)}
-.chave{position:relative;display:inline-block;width:42px;height:24px;flex:none}
-.chave input{opacity:0;width:0;height:0}
-.chave i{position:absolute;inset:0;background:var(--borda);border-radius:99px;transition:.2s}
-.chave i::before{content:'';position:absolute;width:18px;height:18px;left:3px;top:3px;background:#fff;border-radius:99px;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.25)}
-.chave input:checked+i{background:var(--acc)}
-.chave input:checked+i::before{transform:translateX(18px)}
-/* resultados */
-.resultados .res{background:var(--carta);border:1px solid var(--borda);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
-.resultados .res:hover{border-color:var(--acc)}
-.resultados .res b{font-size:12.5px;color:var(--acc)}
-.resultados .res p{margin:3px 0 0;font-size:14px}
-/* loja */
-.capas{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:10px}
-.capa{display:flex;flex-direction:column;gap:6px;align-items:center;text-align:center;padding:16px 10px}
-.capa.on{border-color:var(--acc);box-shadow:inset 0 0 0 1px var(--acc)}
-.bola{width:34px;height:34px;border-radius:99px}
-.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);background:var(--tx);color:var(--fundo);padding:11px 16px;border-radius:10px;font-size:13.5px;opacity:0;pointer-events:none;transition:opacity .25s;z-index:99;max-width:92vw;text-align:center}
-.toast.on{opacity:1}
-@media(max-width:640px){.grade{grid-template-columns:repeat(2,1fr)}.livros{grid-template-columns:repeat(auto-fill,minmax(84px,1fr))}.trads{grid-template-columns:1fr}.marca{display:none}}
-`;

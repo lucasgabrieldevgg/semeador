@@ -13,7 +13,19 @@ async function t(url){const r=await fetch(url,{headers:{'User-Agent':'semeador-b
  const registry=[];
  if(fs.existsSync(REGP)&&!process.env.SEM_REGEN){
   const atual=JSON.parse(fs.readFileSync(REGP,'utf8'));
-  if(atual.trads&&atual.trads.length){console.log('✓ registry em cache ('+atual.trads.length+' traduções)');finish(atual);return}
+  if(atual.trads&&atual.trads.length){
+   console.log('✓ registry em cache ('+atual.trads.length+' traduções)');
+   // garante o corpus local em public/texto copiando da raiz (sem rede, determinístico em qualquer build)
+   for(const id of Object.keys(LOCAIS)){
+    const destId=path.join(DEST,id);
+    if(fs.existsSync(destId)&&fs.readdirSync(destId).filter(f=>/^\d{2}.*\.json$/.test(f)).length>=66)continue;
+    fs.mkdirSync(destId,{recursive:true});
+    for(const f of fs.readdirSync(path.join(__dirname,'..','texto',id)).filter(f=>/^\d{2}.*\.json$/.test(f)))
+     fs.copyFileSync(path.join(__dirname,'..','texto',id,f),path.join(destId,f));
+    console.log('✓',id,'corpus copiado da raiz (',fs.readdirSync(destId).length,'livros )');
+   }
+   finish(atual);return
+  }
  }
  const repo=await j('https://api.github.com/repos/FordhamRamFan/public-domain-bible-translations');
  const br=repo.default_branch;
