@@ -51,23 +51,6 @@ async function temCap(tr,ab,nn){
   return !!(await c.match(chave));
 }
 
-const PROXY='https://soulchat-proxy.vercel.app/api/proxy';
-const MODELOS=['google/gemma-4-26b-a4b-it:free','nvidia/nemotron-3-super-120b-a12b:free','google/gemma-4-31b-it:free'];
-async function callAI(msgs){
-  const erros=[];
-  for(const m of MODELOS){
-    try{
-      const r=await fetch(PROXY,{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({provider:'openrouter',model:m,messages:msgs}),signal:AbortSignal.timeout(90000)});
-      if(!r.ok){erros.push(m.split(':')[0].split('/')[1]+' '+r.status);continue}
-      const d=await r.json();
-      const txt=d.choices&&d.choices[0]&&d.choices[0].message&&d.choices[0].message.content;
-      if(txt&&/rate.?limit|quota|budget|credits|insufficient/i.test(txt)&&txt.length<400){erros.push(m.split(':')[0].split('/')[1]+' limite');continue}
-      if(txt)return txt;
-      erros.push('vazia');
-    }catch(e){erros.push('falhou')}
-  }
-  throw new Error('IA ocupada agora ('+erros.join(' · ')+') — tenta daqui a pouco');
-}
 const CAPAS=[
   {id:'grafite',nome:'Grafite',custo:0,acc:'#4b5563',ico:'alvor'},
   {id:'oliva',nome:'Oliva',custo:150,acc:'#65a30d',ico:'oliva'},
@@ -92,7 +75,6 @@ export default function App(){
   const [toast,setToast]=useState('');
   const [busca,setBusca]=useState({q:'',res:null,buscando:false,baixando:0});
   const [nomesLivros,setNomesLivros]=useState({});
-  const [coment,setComent]=useState({chave:'',txt:'',carregando:false,erro:''});
   const tr=TRADS.find(t=>t.id===trId)||TRADS[0];
   const capa=CAPAS.find(c=>c.id===xpState.ativo)||CAPAS[0];
   const hoje=CORE.hojeISO();
@@ -200,29 +182,6 @@ export default function App(){
     fala('capa desbloqueada! 🎨 (ícone do atalho atualiza ao reinstalar o app)');
   }
 
-  async function explicar(){
-    const chave=trId+'|'+ref.ab+'|'+ref.cap;
-    const cacheK='com_'+trId+'_'+ref.ab+'_'+ref.cap;
-    const salvo=ST.getJ(cacheK,null);
-    if(salvo){setComent({chave,txt:salvo,carregando:false,erro:''});return}
-    if(textoCap.length<40)return fala('o capítulo ainda não carregou');
-    const uso=ST.getJ('uso',{dia:'',n:0});
-    const hojeI=CORE.hojeISO();
-    if(uso.dia===hojeI&&uso.n>=40)return fala('limite de explicações de hoje atingido (40) — amanhã tem mais 💛');
-    ST.setJ('uso',{dia:hojeI,n:uso.dia===hojeI?uso.n+1:1});
-    setComent({chave,txt:'',carregando:true,erro:''});
-    try{
-      const recorte=textoCap.slice(0,6000);
-      const txt=await callAI([
-        {role:'system',content:'Você explica trechos da Bíblia de forma CLARA, em português do Brasil. ESTILO: linguagem de gente, frases curtas, direto ao ponto (como explicar pra um amigo no portão da igreja). ESTRUTURA: 1-2 frases de contexto (quem escreve, pra quem, quando aproximado), o que o trecho quer dizer no fundo, e 1 aplicação prática. NUNCA invente versículo nem cite referência que não está no trecho. Sem sermão, sem dogma de igreja específica, sem teologia polêmica. Texto simbólico? Diz que é simbólico e dá a leitura mais comum. Não sabe? Admite. MÁXIMO 180 palavras.'},
-        {role:'user',content:'LIVRO: '+nomeAtual+' '+ref.cap+' (tradução: '+tr.nome+')\n\nTEXTO:\n'+recorte+'\n\nExplique de forma clara.'}
-      ]);
-      const limpo=txt.trim();
-      ST.setJ(cacheK,limpo);
-      setComent({chave,txt:limpo,carregando:false,erro:''});
-    }catch(e){setComent({chave,txt:'',carregando:false,erro:e.message})}
-  }
-
   const pct=CORE.metaPct(dia,meta);
   const capAtivo=texto&&texto.chapters[ref.cap-1];
   const textoCap=capAtivo?capAtivo.verses.map(v=>v.verse+' '+v.text).join('\n'):'';
@@ -297,12 +256,6 @@ export default function App(){
             <button onClick={()=>{const tem=texto&&texto.chapters.length>ref.cap;if(tem)vaiPara(ref.ab,ref.cap+1,true);else if(LIVROS[idxL+1])vaiPara(LIVROS[idxL+1].ab,1,true)}}>→</button>
           </div>
         </div>
-        {(coment.txt||coment.carregando||coment.erro)&&<div className="comentario">
-          {coment.carregando&&<p className="mudo">✨ explicando…</p>}
-          {coment.erro&&<p className="erro">✨ {coment.erro}</p>}
-          {coment.txt&&<><h4>✨ Explicação clara</h4><p style={{whiteSpace:'pre-wrap'}}>{coment.txt}</p><p className="mudo">IA pode errar — leia sempre com a Bíblia aberta. Este capítulo agora explica offline (ficou salvo).</p></>}
-        </div>}
-        {!coment.carregando&&<div className="linhaExp"><button className="explicar" onClick={explicar}>{coment.txt?'✨ explicar de novo':'✨ Explicar este capítulo (IA)'}</button><span className="mudo">contexto + sentido, em linguagem de gente</span></div>}
       </article>}
     </main>}
 

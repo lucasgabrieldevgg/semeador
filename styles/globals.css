@@ -89,12 +89,6 @@ input[type=range]{width:160px;accent-color:var(--acc)}
 .chave input:checked+i{background:var(--acc)}
 .chave input:checked+i::before{transform:translateX(18px)}
 /* comentário IA */
-.comentario{margin-top:14px;background:var(--suave);border:1px solid var(--borda);border-left:3px solid var(--acc);border-radius:10px;padding:14px 16px}
-.comentario h4{margin:0 0 6px;font-size:13.5px}
-.comentario p{margin:0 0 6px;font-size:14.5px;line-height:1.7}
-.linhaExp{display:flex;gap:10px;align-items:center;margin-top:12px;flex-wrap:wrap}
-.explicar{background:var(--suave);border:1px solid var(--borda);border-radius:10px;padding:10px 14px;font-weight:700;font-size:13px}
-.explicar:hover{border-color:var(--acc);color:var(--acc)}
 /* resultados */
 .resultados .res{background:var(--carta);border:1px solid var(--borda);border-radius:10px;padding:10px 12px;margin-bottom:8px;cursor:pointer}
 .resultados .res:hover{border-color:var(--acc)}
