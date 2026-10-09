@@ -112,3 +112,13 @@ input[type=range]{width:160px;accent-color:var(--acc)}
 .aba,.principal,.navCap button,.lv,.td,.cap,.escolha{transition:background-color .15s ease,border-color .15s ease,color .15s ease,transform .15s ease}
 .lv:hover,.td:hover,.cap:hover{transform:translateY(-1px)}
 @media (prefers-reduced-motion:reduce){*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important;scroll-behavior:auto!important}}
+
+/* browser surfaces */
+:root{--acc:#16a34a}
+::selection{background:color-mix(in srgb,var(--acc) 32%,transparent)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px;border-radius:8px}
+html{scrollbar-color:var(--borda) transparent;scrollbar-width:thin}
+::-webkit-scrollbar{width:10px}
+::-webkit-scrollbar-track{background:transparent}
+::-webkit-scrollbar-thumb{background:var(--borda);border-radius:8px;border:2px solid var(--fundo)}
+::placeholder{color:var(--mut);opacity:.75}

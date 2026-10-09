@@ -48,3 +48,14 @@ ok(C.parseRef('/salmo',LIVROS)===null,'livro inexistente = null');
 ok(C.parseRef('/genesis',LIVROS).ab==='Gen','nome pt sem acento acha (genesis→Gen)');
 ok(C.parseRef('/psalmos/23',LIVROS)===null||C.parseRef('/salmos/23',LIVROS).ab==='Ps','salmos resolve');
 console.log('\n✦ suíte Semeador core');
+
+// craft-floor guards
+const FS=require('fs');
+const IDS=['alvor','noite','oliva','deserto','manancial'];
+ok(IDS.every(i=>{const t=C.temaPorId(i);return t&&typeof t.acc==='string'&&/^#[0-9a-f]{6}$/i.test(t.acc);}),'todo tema define acc hex');
+const G=FS.readFileSync('styles/globals.css','utf8');
+ok(/::selection\{[^}]*--acc/.test(G),'globals: ::selection com acc');
+ok(/:focus-visible\{[^}]*outline/.test(G),'globals: focus-visible');
+ok(/scrollbar-color/.test(G),'globals: scrollbar');
+ok(/::placeholder\{[^}]*--mut/.test(G),'globals: placeholder');
+console.log('\n✦ suíte Semeador core');
